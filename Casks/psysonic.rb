@@ -22,7 +22,8 @@ cask "psysonic" do
   # `brew upgrade` would roll a self-updated app back to the cask version.
   auto_updates true
 
-  depends_on macos: ">= :catalina"
+  # Bare symbol = minimum version (the ">= :catalina" string form is deprecated).
+  depends_on macos: :catalina
 
   app "Psysonic.app"
 
