@@ -38,5 +38,7 @@ brew uninstall --cask --zap psysonic    # also removes settings, caches and the 
 
 ## License
 
-Psysonic is licensed under the GNU General Public License v3.0 — see the
+The cask definition in this repository is available under the [MIT License](LICENSE).
+
+Psysonic itself is licensed under the GNU General Public License v3.0 — see the
 [main repository](https://github.com/Psychotoxical/psysonic).
