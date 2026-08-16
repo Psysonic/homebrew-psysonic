@@ -31,6 +31,13 @@ byte-for-byte, which happens once the in-app updater has replaced it. Neither op
 your settings, server profiles or the local library index — those live in
 `~/Library/Application Support/dev.psysonic.player`, not inside the app bundle.
 
+### First launch takes a moment
+
+macOS asks for confirmation the first time ("downloaded from the internet") and then verifies
+the whole signed bundle before anything appears on screen. The icon can sit in the Dock for a
+while with no window — that is Gatekeeper working, not a hang. Give it a few seconds; every
+later start is immediate.
+
 ## Updating
 
 Psysonic updates itself on macOS through its built-in updater, so the cask is marked
