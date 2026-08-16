@@ -1,0 +1,3 @@
+# Keep everything LF in the repository. The update workflow runs bash on Linux
+# runners, where CRLF line endings break scripts with "$'\r': command not found".
+* text=auto eol=lf

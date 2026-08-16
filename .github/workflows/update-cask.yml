@@ -1,0 +1,115 @@
+name: Update cask
+
+# Polls the app repository for the newest stable release and rewrites the cask.
+# Runs in this repo on purpose: no cross-repo token is needed, GITHUB_TOKEN can
+# read the public app repo and write here.
+#
+# Note: GitHub disables `schedule` in repositories with no activity for 60 days.
+# Every release writes a commit here, so an active project keeps it alive — but
+# after a long quiet period, run the workflow once via "Run workflow" to re-arm it.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve latest stable release
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # /releases/latest excludes drafts and pre-releases, so RCs never land here.
+          tag=$(gh api repos/Psychotoxical/psysonic/releases/latest --jq .tag_name)
+          version=${tag#app-v}
+          if [ -z "$version" ] || [ "$version" = "$tag" ]; then
+            echo "::error::unexpected tag format: '$tag' (expected app-vX.Y.Z)"
+            exit 1
+          fi
+          echo "tag=$tag"         >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Compute SHA256 for both architectures
+        id: sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.rel.outputs.tag }}
+          VERSION: ${{ steps.rel.outputs.version }}
+        run: |
+          set -euo pipefail
+          meta=$(gh api "repos/Psychotoxical/psysonic/releases/tags/$TAG")
+          for arch in aarch64 x64; do
+            name="Psysonic_${VERSION}_${arch}.dmg"
+            digest=$(printf '%s' "$meta" | jq -r --arg n "$name" \
+              '.assets[] | select(.name == $n) | .digest // ""')
+            if [ -z "$digest" ] || [ "$digest" = "null" ]; then
+              # Older releases predate the API digest field: fall back to hashing.
+              echo "no API digest for $name, downloading to hash it"
+              url=$(printf '%s' "$meta" | jq -r --arg n "$name" \
+                '.assets[] | select(.name == $n) | .browser_download_url // ""')
+              if [ -z "$url" ]; then
+                echo "::error::release $TAG has no asset named $name"
+                exit 1
+              fi
+              curl -fsSL "$url" -o "$name"
+              sum=$(sha256sum "$name" | cut -d' ' -f1)
+              rm -f "$name"
+            else
+              sum=${digest#sha256:}
+            fi
+            # A sha256 is exactly 64 hex chars. Anything else means we picked up
+            # a redirect page or an error body -- fail loudly instead of writing junk.
+            if ! printf '%s' "$sum" | grep -Eq '^[0-9a-f]{64}$'; then
+              echo "::error::bad sha256 for $name: '$sum'"
+              exit 1
+            fi
+            case "$arch" in
+              aarch64) echo "arm=$sum"   >> "$GITHUB_OUTPUT" ;;
+              x64)     echo "intel=$sum" >> "$GITHUB_OUTPUT" ;;
+            esac
+          done
+
+      - name: Rewrite cask
+        env:
+          VERSION: ${{ steps.rel.outputs.version }}
+          ARM: ${{ steps.sha.outputs.arm }}
+          INTEL: ${{ steps.sha.outputs.intel }}
+        run: |
+          set -euo pipefail
+          f=Casks/psysonic.rb
+          sed -i -E \
+            -e "s|^( *version )\".*\"|\1\"${VERSION}\"|" \
+            -e "s|^( *sha256 arm: +)\"[^\"]*\"|\1\"${ARM}\"|" \
+            -e "s|^( *intel: +)\"[^\"]*\"|\1\"${INTEL}\"|" \
+            "$f"
+          # Verify the edit actually landed. A silently non-matching sed would
+          # otherwise leave the old version in place and still exit 0.
+          for expected in "$VERSION" "$ARM" "$INTEL"; do
+            if ! grep -qF "$expected" "$f"; then
+              echo "::error::cask rewrite failed, '$expected' not present after sed"
+              exit 1
+            fi
+          done
+          cat "$f"
+
+      - name: Commit if changed
+        env:
+          VERSION: ${{ steps.rel.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Casks/psysonic.rb; then
+            echo "cask already at ${VERSION}, nothing to do"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "psysonic ${VERSION}" -- Casks/psysonic.rb
+          git push
