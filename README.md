@@ -1,6 +1,6 @@
 # homebrew-psysonic
 
-Homebrew tap for [Psysonic](https://github.com/Psychotoxical/psysonic) — a desktop client for
+Homebrew tap for [Psysonic](https://github.com/Psysonic/psysonic) — a desktop client for
 Navidrome and other Subsonic-compatible servers.
 
 ## Install
@@ -69,4 +69,4 @@ brew uninstall --cask --zap psysonic    # also removes settings, caches and the 
 The cask definition in this repository is available under the [MIT License](LICENSE).
 
 Psysonic itself is licensed under the GNU General Public License v3.0 — see the
-[main repository](https://github.com/Psychotoxical/psysonic).
+[main repository](https://github.com/Psysonic/psysonic).
