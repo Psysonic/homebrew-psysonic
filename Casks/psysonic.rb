@@ -1,9 +1,9 @@
 cask "psysonic" do
   arch arm: "aarch64", intel: "x64"
 
-  version "1.51.0"
-  sha256 arm:   "a1963ca99f2f8358bb73088579d0cd4034c836a59aac339d60883eabda61c38c",
-         intel: "72b23d4b3eee485e7d72d541d2b8b869c725e04e978f755f9db44257f93b2446"
+  version "1.52.0"
+  sha256 arm:   "048945387a139bdc8e8cc70bd25be6bd364ccb974880dfd93d6ad748107d4b28",
+         intel: "9904de9637aefb1099a34e8ccc52a06d095ba90f2948b1abc2ee274e404a8324"
 
   url "https://github.com/Psysonic/psysonic/releases/download/app-v#{version}/Psysonic_#{version}_#{arch}.dmg",
       verified: "github.com/Psysonic/psysonic/"
