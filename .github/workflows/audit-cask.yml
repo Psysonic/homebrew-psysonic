@@ -48,6 +48,12 @@ jobs:
       - name: Audit as a new cask
         run: brew audit --cask --new psysonic/psysonic/psysonic
 
+      # The cask carries no livecheck block: the default strategy is expected to
+      # read the GitHub releases and skip release candidates. Prove it resolves
+      # the current version rather than assuming it.
+      - name: Version detection without a livecheck block
+        run: brew livecheck --cask --json psysonic/psysonic/psysonic
+
       - name: Install and remove again
         env:
           HOMEBREW_NO_INSTALL_FROM_API: 1
