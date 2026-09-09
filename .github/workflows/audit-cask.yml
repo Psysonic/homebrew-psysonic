@@ -24,6 +24,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The runner image ships an older Homebrew than the one homebrew-cask's
+      # own CI runs, and rules are disabled there first. Without this the audit
+      # passes here and fails on submission, which is exactly what happened
+      # with `depends_on macos: :catalina`.
+      - name: Set up the same Homebrew homebrew-cask CI uses
+        uses: Homebrew/actions/setup-homebrew@3cdb78d0f62ad29dd32de765782654f4eedea607 # 2026.08.31.1
+
+      - name: Record the version under test
+        run: brew --version
+
       - name: Link this checkout as the tap
         run: |
           tap_dir="$(brew --repository)/Library/Taps/psysonic/homebrew-psysonic"
