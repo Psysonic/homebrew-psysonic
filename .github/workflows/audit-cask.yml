@@ -35,10 +35,15 @@ jobs:
       - name: Formatting
         run: brew style --cask psysonic/psysonic/psysonic
 
+      - name: Audit against the network
+        run: brew audit --cask --online psysonic/psysonic/psysonic
+
       - name: Audit as a new cask
-        run: brew audit --new --cask psysonic/psysonic/psysonic
+        run: brew audit --cask --new psysonic/psysonic/psysonic
 
       - name: Install and remove again
+        env:
+          HOMEBREW_NO_INSTALL_FROM_API: 1
         run: |
           brew trust --cask psysonic/psysonic/psysonic
           brew install --cask psysonic/psysonic/psysonic
