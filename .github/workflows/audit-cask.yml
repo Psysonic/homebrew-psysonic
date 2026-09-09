@@ -1,0 +1,46 @@
+name: Audit cask
+
+# Runs the checks Homebrew's own CI runs on a submitted cask, on a machine with
+# a working toolchain. macos-latest is Apple Silicon, so this also exercises the
+# arm64 download, which no maintainer here can test locally.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Casks/**"
+      - ".github/workflows/audit-cask.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: macos-latest
+    env:
+      HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_ENV_HINTS: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Link this checkout as the tap
+        run: |
+          tap_dir="$(brew --repository)/Library/Taps/psysonic/homebrew-psysonic"
+          rm -rf "$tap_dir"
+          mkdir -p "$(dirname "$tap_dir")"
+          cp -R "$GITHUB_WORKSPACE" "$tap_dir"
+          brew tap
+
+      - name: Formatting
+        run: brew style --cask psysonic/psysonic/psysonic
+
+      - name: Audit as a new cask
+        run: brew audit --new --cask psysonic/psysonic/psysonic
+
+      - name: Install and remove again
+        run: |
+          brew trust --cask psysonic/psysonic/psysonic
+          brew install --cask psysonic/psysonic/psysonic
+          test -d /Applications/Psysonic.app
+          brew uninstall --cask psysonic/psysonic/psysonic
