@@ -59,3 +59,10 @@ jobs:
           brew install --cask psysonic/psysonic/psysonic
           test -d /Applications/Psysonic.app
           brew uninstall --cask psysonic/psysonic/psysonic
+
+      # The copied tap is a plain directory, and setup-homebrew's own cleanup
+      # expects to remove a symlink. Clear it here so the job does not end red
+      # on teardown alone.
+      - name: Unlink the tap again
+        if: always()
+        run: rm -rf "$(brew --repository)/Library/Taps/psysonic"

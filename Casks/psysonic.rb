@@ -20,6 +20,7 @@ cask "psysonic" do
   # it replaces Psysonic.app in place and relaunches. Without this stanza
   # `brew upgrade` would roll a self-updated app back to the cask version.
   auto_updates true
+  depends_on :macos
 
   app "Psysonic.app"
 
