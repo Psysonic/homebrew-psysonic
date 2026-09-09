@@ -31,15 +31,12 @@ jobs:
       - name: Set up the same Homebrew homebrew-cask CI uses
         uses: Homebrew/actions/setup-homebrew@3cdb78d0f62ad29dd32de765782654f4eedea607 # 2026.08.31.1
 
-      - name: Record the version under test
-        run: brew --version
-
-      - name: Link this checkout as the tap
+      # setup-homebrew recognises a repository named homebrew-* as a tap and
+      # symlinks this checkout into place itself. Do not link it by hand: a
+      # copied directory replaces that symlink and its teardown then fails.
+      - name: Record the version and the linked tap
         run: |
-          tap_dir="$(brew --repository)/Library/Taps/psysonic/homebrew-psysonic"
-          rm -rf "$tap_dir"
-          mkdir -p "$(dirname "$tap_dir")"
-          cp -R "$GITHUB_WORKSPACE" "$tap_dir"
+          brew --version
           brew tap
 
       - name: Formatting
@@ -59,10 +56,3 @@ jobs:
           brew install --cask psysonic/psysonic/psysonic
           test -d /Applications/Psysonic.app
           brew uninstall --cask psysonic/psysonic/psysonic
-
-      # The copied tap is a plain directory, and setup-homebrew's own cleanup
-      # expects to remove a symlink. Clear it here so the job does not end red
-      # on teardown alone.
-      - name: Unlink the tap again
-        if: always()
-        run: rm -rf "$(brew --repository)/Library/Taps/psysonic"
