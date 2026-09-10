@@ -16,7 +16,14 @@ permissions:
 
 jobs:
   audit:
-    runs-on: macos-latest
+    name: audit (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # The cask carries an on_linux branch, so it has to be exercised on
+        # Linux too. Neither result may hide the other, hence fail-fast: false.
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     env:
       HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       HOMEBREW_NO_ANALYTICS: 1
@@ -60,5 +67,7 @@ jobs:
         run: |
           brew trust --cask psysonic/psysonic/psysonic
           brew install --cask psysonic/psysonic/psysonic
-          test -d /Applications/Psysonic.app
+          # Platform-independent proof, and it prints where the artifact landed.
+          brew list --cask psysonic/psysonic/psysonic
+          if [ "$RUNNER_OS" = "macOS" ]; then test -d /Applications/Psysonic.app; fi
           brew uninstall --cask psysonic/psysonic/psysonic
